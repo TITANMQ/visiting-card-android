@@ -1,22 +1,33 @@
 package com.community.jboss.visitingcard.VisitingCard;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
 
-import com.community.jboss.visitingcard.LoginActivity;
 import com.community.jboss.visitingcard.Maps.MapsActivity;
 import com.community.jboss.visitingcard.R;
 import com.community.jboss.visitingcard.SettingsActivity;
 
+import java.io.IOException;
+
 public class VisitingCardActivity extends AppCompatActivity {
 
+    private ImageView profileImage;
+
+    private int SELECT_FILE = 1, REQUEST_CAMERA = 2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +41,7 @@ public class VisitingCardActivity extends AppCompatActivity {
 
         // TODO: Align FAB to Bottom Right and replace it's icon with a SAVE icon
         // TODO: On Click on FAB should make a network call to store the entered information in the cloud using POST method(Do this in NetworkUtils class)
+        profileImage = findViewById(R.id.profile_image);
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -65,4 +77,106 @@ public class VisitingCardActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+
+    public void profileImageOnClick(View view) {
+
+        showPictureDialog();
+    }
+
+    private void showPictureDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Action");
+        String[] pictureDialogItems = {
+                "Select photo from gallery",
+                "Capture photo from camera"};
+        builder.setItems(pictureDialogItems,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                getImageStorage();
+                                break;
+                            case 1:
+                                takePhoto();
+                                break;
+
+                            default:
+                                takePhoto();
+                                break;
+
+                        }
+
+
+                    }
+
+                });
+
+        builder.show();
+    }
+
+
+    public void takePhoto() {
+
+
+        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(takePicture, REQUEST_CAMERA);
+
+
+    }
+
+    public void getImageStorage() {
+
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_FILE);
+
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == SELECT_FILE) {
+
+                onSelectFile(data);
+
+            } else if (requestCode == REQUEST_CAMERA) {
+
+                onCamera(data);
+            }
+
+        }
+    }
+
+    private void onCamera(Intent data) {
+        Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
+        profileImage.setImageBitmap(thumbnail);
+        Toast.makeText(getApplicationContext(), "Profile Image Set", Toast.LENGTH_SHORT).show();
+    }
+
+    private void onSelectFile(Intent data) {
+        Bitmap bitmap;
+        if (data != null) {
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(getApplicationContext().getContentResolver(), data.getData());
+                profileImage.setImageBitmap(bitmap);
+                Toast.makeText(getApplicationContext(), "Profile Image Set", Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Image Not Selected", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+
+    }
+
+
+
+
+
+
+
 }
